@@ -1,9 +1,11 @@
 package ru.kata.spring.boot_security.demo.controller;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.service.UserService;
@@ -11,7 +13,6 @@ import ru.kata.spring.boot_security.demo.service.UserService;
 import java.util.List;
 
 @org.springframework.web.bind.annotation.RestController
-@RequestMapping("/api")
 public class RestController {
     private final UserService userService;
 
@@ -20,34 +21,38 @@ public class RestController {
         this.userService = userService;
     }
 
-    @GetMapping("/users")
-    public List<User> showAllUsers() {
-        return userService.getUsers();
+    @GetMapping("/admin/users")
+    public ResponseEntity<List<User>> showAllUsers() {
+        return ResponseEntity.ok(userService.getUsers());
     }
 
-    @GetMapping("/{id}")
-    public User getUser(@PathVariable long id, @ModelAttribute("user") User user) {
-        return userService.findById(id);
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<User> getUser(@PathVariable long id) {
+        return ResponseEntity.ok(userService.findById(id));
     }
 
-    @PostMapping("/create_user")
-    public User createUser(@ModelAttribute("user") User user) {
+    @PostMapping("/admin/create_user")
+    public ResponseEntity<User> createUser(@RequestBody User user) {
         userService.save(user);
-        return user;
+        return ResponseEntity.ok(user);
     }
 
-    @PostMapping(value = "/edit/{id}")
-    public User editUser(@ModelAttribute("user") User user, @PathVariable("id") Long id, Model model) {
+    @PatchMapping(value = "/admin/edit/{id}")
+    public ResponseEntity<User> editUser(@RequestBody User user, @PathVariable("id") Long id) {
         userService.update(id, user);
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findUserByUsername(auth.getName());
-        model.addAttribute("currentUser", currentUser);
-        return user;
+        return ResponseEntity.ok(user);
     }
 
-    @PostMapping("/delete/{id}")
-    public String delete(@PathVariable("id") Long id) {
+    @DeleteMapping("/admin/delete/{id}")
+    public ResponseEntity<HttpStatus> delete(@PathVariable("id") Long id) {
         userService.deleteById(id);
-        return "User successfully deleted";
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<User> showInfoAboutUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userService.findUserByUsername(auth.getName());
+        return ResponseEntity.ok(user);
     }
 }

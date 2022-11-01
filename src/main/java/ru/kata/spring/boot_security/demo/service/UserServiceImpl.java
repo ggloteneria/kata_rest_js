@@ -6,29 +6,35 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.repositories.UserRepository;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 @Service
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
+    private final RoleService roleService;
 
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, RoleService roleService, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.userRepository = userRepository;
+        this.roleService = roleService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
     @Transactional
     @Override
     public void save(User user) {
+        user.setRoles(Collections.singletonList(roleService.findRoleByRole("User")));
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
@@ -47,13 +53,12 @@ public class UserServiceImpl implements UserService{
     @Override
     public void update(Long id, User userToUpdate) {
         User oldUser = Objects.requireNonNull(userRepository.findById(id).orElse(null));
-        if (oldUser.getPassword().equals(userToUpdate.getPassword()))
-        {
-            userRepository.save(userToUpdate);
-        } else {
+        if (!oldUser.getPassword().equals(userToUpdate.getPassword())) {
             userToUpdate.setPassword(bCryptPasswordEncoder.encode(userToUpdate.getPassword()));
-            userRepository.save(userToUpdate);
         }
+        userToUpdate.setId(id);
+        userRepository.save(userToUpdate);
+
     }
 
     @Transactional
