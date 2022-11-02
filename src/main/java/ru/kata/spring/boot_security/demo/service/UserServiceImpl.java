@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public void save(User user) {
-        user.setRoles(Collections.singletonList(roleService.findRoleByRole("User")));
+        user.setRoles(roleService.findAll());
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
